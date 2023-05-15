@@ -18,6 +18,17 @@ class ListNode {
    }
 }
 
+class TreeNode {
+    public var val: Int
+    public var left: TreeNode?
+    public var right: TreeNode?
+    public init(_ val: Int, _ left: TreeNode?=nil, _ right: TreeNode?=nil) {
+        self.val = val
+        self.left = left
+        self.right = right
+    }
+}
+
 // 剑指 Offer 03. 数组中重复的数字
 // https://leetcode.cn/problems/shu-zu-zhong-zhong-fu-de-shu-zi-lcof/%20class%20Solution%20%7B/
 func test03() {
@@ -134,17 +145,6 @@ func test06() {
             newHead = newHead?.next
         }
         return arr
-    }
-}
-
-class TreeNode {
-    public var val: Int
-    public var left: TreeNode?
-    public var right: TreeNode?
-    public init(_ val: Int) {
-        self.val = val
-        self.left = nil
-        self.right = nil
     }
 }
     
@@ -697,11 +697,12 @@ func test19() {
         } else {
             /*
             * 生效 1 和多次
-            * 不生效 0 次
+            *  不生效 0 次
             */
             if (s1 == p1 || p1 == ".") {
                 return isMatchDfs(Array(sArr[1...]), Array(pArr[0...])) || (pArr.count >= 2 && isMatchDfs(Array(sArr[0...]), Array(pArr[2...])))
             } else {
+                
                 return (pArr.count >= 2 && isMatchDfs(Array(sArr[0...]), Array(pArr[2...])))
             }
         }
@@ -1331,8 +1332,98 @@ func test37() {
 //    来源：力扣（LeetCode）
 //    著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
      */
+    
 }
 
+func test37_I() {
+    // 规定使用,分割节点，空字符串null表示
+    func Serialize ( _ root: TreeNode?) -> String {
+        // 层序遍历
+        if root == nil {
+            return ""
+        }
+        var arr = [Int?]()
+        var queue = [TreeNode?]()
+        arr.append(root!.val)
+        queue.append(root)
+        while !queue.isEmpty {
+            var size = queue.count
+            while size > 0 {
+               let node:TreeNode? = queue.removeFirst() ?? nil
+               if (node != nil) {
+                   queue.append(node?.left)
+                   queue.append(node?.right)
+                   arr.append(node?.left?.val)
+                   arr.append(node?.right?.val)
+               }
+               size = size - 1
+            }
+        }
+        for index in (0 ... arr.count - 1).reversed() {
+            if arr[index] == nil {
+                arr.remove(at: index)
+            } else {
+                break
+            }
+        }
+        let strArr:[String] = arr.map {
+            if $0 == nil {
+                return "#"
+            } else {
+                return String($0 ?? 0)
+            }
+        }
+        let res = strArr.joined(separator: ",")
+        return res
+    }
+    
+    func Deserialize ( _ str: String) -> TreeNode? {
+        var arr:[Int?] = str.components(separatedBy: ",").map {
+            if $0 == "#" {
+                return nil
+            } else {
+                return Int($0)
+            }
+        }
+        if arr.count == 0 || arr.first == nil {
+            return nil
+        }
+        var queue = [TreeNode?]()
+        let firstNode = TreeNode(arr.removeFirst()!)
+        queue.append(firstNode)
+        while !queue.isEmpty && !arr.isEmpty {
+           var size = queue.count
+            while size > 0 {
+               let node = queue.removeFirst()
+               size = size - 1
+               if node != nil {
+                   if arr.count <= 0 {
+                       break
+                   }
+                   let left = arr.removeFirst()
+                   if left != nil {
+                       node?.left = TreeNode(left!)
+                       queue.append(node?.left)
+                   }
+                   if arr.count <= 0 {
+                       break
+                   }
+                   let right = arr.removeFirst()
+                   if right != nil {
+                       node?.right = TreeNode(right!)
+                       queue.append(node?.right)
+                   }
+               }
+           }
+        }
+        return firstNode
+    }
+    let treeNode = Deserialize("1,2,3,#,#,6,7")
+    let str = Serialize(treeNode)
+    print(str)
+}
+
+test37_I()
 
 
 func test38() {
@@ -2556,3 +2647,406 @@ func test68_II() {
       }
    */
 }
+
+// MARK: - 牛客网
+func niuketestBM49() {
+    // https://www.nowcoder.com/practice/c215ba61c8b1443b996351df929dc4d4?tpId=295
+    func solve ( _ s: String) -> Int {
+            // write code here
+        var arr = Array(s)
+        if arr.count == 0 { return 0 }
+        var stack:[String] = [String]()
+        var start:Int = -1
+        for i in 0 ... arr.count - 1 {
+            let isNum = ("0" ... "9").contains(arr[i])
+            let isRight = (arr[i] == ")")
+            if isNum {
+                if start == -1 {
+                    start = i
+                }
+                if i + 1 == arr.count || !("0" ... "9").contains(arr[i + 1]) {
+                    // 结算
+                    let str = String(arr[start ... i])
+                    stack.append(str)
+                    start = -1
+                }
+            } else if isRight {
+                var arr = [String]()
+                while !stack.isEmpty {
+                    if stack.last != "(" {
+                        arr.append(stack.popLast()!)
+                    } else {
+                        _ = stack.popLast()
+                        break;
+                    }
+                }
+                stack.append(calulate(strArr: arr.reversed()))
+            } else {
+                stack.append(String(arr[i]))
+            }
+        }
+       return Int(calulate(strArr: stack))!
+    }
+    
+    func calulate(strArr:[String]) -> String {
+        var stack:[String] = [String]()
+        for i in 0 ... strArr.count - 1 {
+            if strArr[i] != "*" && strArr[i] != "+" && strArr[i] != "-" {
+                if (!stack.isEmpty && stack.last == "*") {
+                    _ = stack.popLast()
+                    var num = Int(stack.popLast()!)!
+                    num = num * Int(strArr[i])!
+                    stack.append(String(num))
+                } else {
+                    stack.append(strArr[i])
+                }
+            } else {
+               stack.append(strArr[i])
+            }
+        }
+        
+        var stack2 = [String]()
+        for i in 0 ... stack.count - 1 {
+            if stack[i] != "+" && stack[i] != "-" {
+                if (stack2.last == "+") {
+                    _ = stack2.popLast()
+                    var num = Int(stack2.popLast()!)!
+                    num = num + Int(stack[i])!
+                    stack2.append(String(num))
+                } else if (stack2.last == "-") {
+                    _ = stack2.popLast()
+                    var num = Int(stack2.popLast()!)!
+                    num = num - Int(stack[i])!
+                    stack2.append(String(num))
+                } else {
+                    stack2.append(stack[i])
+                }
+            } else {
+               stack2.append(stack[i])
+            }
+        }
+        return stack2.first!
+    }
+    
+    print(solve("(2*(3-4))*5"))
+    for i in "A".unicodeScalars.first!.value ... "Z".unicodeScalars.first!.value {
+        print(Character(Unicode.Scalar(i)!))
+    }
+}
+
+func niuketestBM55(){
+    
+    func permute ( _ num: [Int]) -> [[Int]] {
+        var nums = num.sorted(by: <)
+        if nums.count == 1 {
+            var arr = [[Int]]()
+            arr.append([nums[0]])
+            return arr
+        }
+        // 保持位置不变，跟后面的每个交换位置 2种情况
+        var totalArr = [[Int]]()
+        for i in 0 ... nums.count - 1 {
+            (nums[0], nums[i]) = (nums[i], nums[0])
+             let arr = permute(Array(nums[1 ... nums.count - 1]))
+             insertArr(&totalArr, arr, nums[0])
+             (nums[0], nums[i]) = (nums[i], nums[0])
+        }
+        return totalArr
+    }
+    
+    func insertArr(_ totalArr:inout [[Int]],_ arr:[[Int]],_ addNum:Int) {
+        for value in arr {
+            var row = value
+            row.insert(addNum, at: 0)
+            totalArr.append(row)
+        }
+    }
+    
+    print(permute([1,2,3]))
+}
+
+func niuketestBM56() {
+    var prefixStrArr = [String]()
+    func permute( _ num: [Int]) -> [[Int]] {
+        if let arr = sortNums(prefix:"", num: num) {
+            return arr
+        } else {
+            return [[Int]]()
+        }
+    }
+    
+    func sortNums(prefix:String, num: [Int]) -> [[Int]]? {
+        var nums = num.sorted(by: <)
+        if !prefixStrArr.contains(prefix) {
+            prefixStrArr.append(prefix)
+        } else {
+            return nil
+        }
+        if nums.count == 1 {
+            var arr = [[Int]]()
+            arr.append([nums[0]])
+            return arr
+        }
+        // 保持位置不变，跟后面的每个交换位置 2种情况
+        // 看看之前有没有排序
+        
+        var totalArr = [[Int]]()
+        for i in 0 ... nums.count - 1 {
+            (nums[0], nums[i]) = (nums[i], nums[0])
+            var prefix = prefix + "\(nums[0])"
+            if let arr = sortNums(prefix:prefix, num:Array(nums[1 ... nums.count - 1])) {
+                insertArr(&totalArr, arr, nums[0])
+            }
+            (nums[0], nums[i]) = (nums[i], nums[0])
+        }
+        return totalArr
+    }
+    
+    func insertArr(_ totalArr:inout [[Int]],_ arr:[[Int]],_ addNum:Int) {
+        for value in arr {
+            var row = value
+            row.insert(addNum, at: 0)
+            totalArr.append(row)
+        }
+    }
+    print(permute([1,4,4,3,1]))
+}
+
+func niuketestBM57() {
+    func solve ( _ grid: [[Character]]) -> Int {
+        var grid1 = grid
+        var count = 0
+        for i in 0 ... grid.count - 1 {
+            for j in 0 ... grid[0].count - 1 {
+                if grid1[i][j] == "1" {
+                    count = count + 1
+                    var queue = [(Int, Int)]()
+                    grid1[i][j] = "2"
+                    queue.append((i, j))
+                    while !queue.isEmpty {
+                       var size = queue.count
+                       while size > 0 {
+                           let (m, n) = queue.removeFirst()
+                           let locations =  nodeLocation(i: m, j: n, grid: grid1)
+                           for location in locations {
+                               if grid1[location.0][location.1] == "1" {
+                                   grid1[location.0][location.1] = "2"
+                                   queue.append(location)
+                               }
+                           }
+                           size = size - 1
+                       }
+                    }
+                }
+            }
+        }
+        return count
+    }
+    
+    func nodeLocation(i:Int, j:Int, grid: [[Character]])->[(Int, Int)] {
+        var locations = [(Int, Int)]()
+        let row = grid.count
+        let col = grid[0].count
+        if i >= 1 { // 上
+            locations.append((i - 1, j))
+        }
+        if i < row - 1 { // 下
+           locations.append((i + 1, j))
+        }
+        
+        if j >= 1 { // 左
+            locations.append((i, j - 1))
+        }
+        if j < col - 1 { // 右
+           locations.append((i, j + 1))
+        }
+        return locations
+    }
+}
+
+func niuketestBM59() {
+    var count = 0
+    var positiveSet = Set<Int>()
+    var negativeSet = Set<Int>()
+    var colSet = Set<Int>()
+    func Nqueen ( _ n: Int) -> Int {
+        dfs(i: 0, n: n)
+        return count
+    }
+    
+    func dfs(i:Int, n:Int) {
+//        print(i)
+        if (i == n) {
+            count = count + 1
+            return
+        }
+        for j in 0 ... n - 1 {
+            if (positiveSet.contains(i - j)) || negativeSet.contains(i + j) ||  colSet.contains(j) {
+                continue
+            }
+            positiveSet.insert(i - j)
+            negativeSet.insert(i + j)
+            colSet.insert(j)
+            
+            dfs(i: i + 1, n: n)
+            
+            positiveSet.remove(i - j)
+            negativeSet.remove(i + j)
+            colSet.remove(j)
+        }
+    }
+    
+    print(Nqueen(4))
+}
+
+func niuketestBM60() {
+    var left = 0
+    var right = 0
+    var arr = [String]()
+    var pre = ""
+    var set = Set<String>()
+    func generateParenthesis ( _ n: Int) -> [String] {
+        left = n
+        right = n
+        dfs(pre: &pre, left: left, right: right, n: n)
+        return arr
+    }
+    
+    func dfs(pre:inout String, left:Int, right:Int, n:Int) {
+        if set.contains(pre) { // 剪枝
+            return
+        } else {
+            set.insert(pre)
+            // 判断一下前缀是否合法
+            if !isPrefixValid(str: pre) {
+                return
+            }
+        }
+        if (left == 0 && right == 0) { // 符合的结果
+            arr.append(pre)
+            return
+        }
+        // 选择左括号 或者 选择右括号 选择
+        if (left > 0) {
+            pre = pre + "("
+            dfs(pre: &pre, left: left - 1, right: right, n: n)
+            pre.removeLast()
+        }
+        
+        if (right > 0) {
+            pre = pre + ")"
+            dfs(pre: &pre, left: left, right: right - 1, n: n)
+            pre.removeLast()
+        }
+    }
+    
+    func isPrefixValid(str:String)->Bool {
+        if str.count == 0 {
+            return true
+        }
+        var stack = [Character]()
+        var arr = Array(str)
+        while arr.count > 0 {
+            var member = arr.removeFirst()
+            if member == "(" {
+                stack.append(member)
+            } else {
+                if stack.isEmpty {
+                    return false
+                } else {
+                    if stack.last == "(" {
+                        stack.removeFirst()
+                    }
+                }
+            }
+        }
+        return true
+    }
+        
+    print(generateParenthesis(2))
+}
+
+func niuketestBM61() {
+    
+    var table:[[Int]] = [[Int]]()
+    var matrixTable = [[Int]]()
+    var res = 0
+    var n = 0
+    var m = 0
+    func solve ( _ matrix: [[Int]]) -> Int {
+         n = matrix.count
+         m = matrix[0].count
+         matrixTable = matrix
+        table = [[Int]](repeating: [Int](repeating: 0, count: m), count: n)
+        for i in 0 ... n - 1 {
+            for j in 0 ... m - 1 {
+                var arr = [(Int, Int)]()
+                dfs(i: i, j: j, arr:&arr, lastX: nil, lastY: nil)
+            }
+        }
+        return res
+    }
+    
+    func dfs(i:Int, j:Int, arr:inout [(Int, Int)], lastX:Int?, lastY:Int?) {
+        if (i < 0 || i > n - 1 || j < 0 || j > m - 1) {
+            res = max(res, arr.count)
+            return
+        }
+        
+        // 走过
+        if table[i][j] == 1 {
+            res = max(res, arr.count)
+            return
+        }
+        
+        // 没有递增
+        if let lastX = lastX, let lastY = lastY {
+            if (matrixTable[lastX][lastY] >  matrixTable[i][j]) {
+                res = max(res, arr.count)
+                return
+            }
+        }
+        
+        // 没有走过 去走
+        table[i][j] = 1
+        arr.append((i, j))
+        
+        dfs(i: i + 1, j: j, arr: &arr, lastX: i, lastY: j)
+        dfs(i: i - 1, j: j, arr: &arr, lastX: i, lastY: j)
+        dfs(i: i , j: j + 1, arr: &arr,lastX: i, lastY: j)
+        dfs(i: i , j: j - 1, arr: &arr,lastX: i, lastY: j)
+        
+        table[i][j] = 0
+        arr.removeLast()
+    }
+    
+    print(solve([[1,2,3],[4,5,6],[7,8,9]]))
+}
+/*
+func niuketestBM65() {
+    func LCS ( _ s1: String,  _ s2: String) -> String {
+        var arr1:[Character] = Array(s1)
+        var arr2:[Character] = Array(s2)
+        if (arr1.count * arr2.count == 0) {
+            return "-1"
+        }
+        var res = [[(Int, Int, [Character])]]()
+        for i in 0 ... arr1.count - 1 {
+            for j in 0 ... arr2.count - 1 {
+                var ch1 = arr1[i]
+                var ch2 = arr2[j]
+                if (i == 0) {
+                    var index2 = arr2.firstIndex(of: ch1)
+                    if let index2 = index2 {
+                        res[i][j] = (i, index2, ch1)
+                    } else {
+                        res[i][j] = (i, 0, "")
+                    }
+                }
+            }
+        }
+        return "ccc"
+    }
+}
+ */
+
